@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SIGNAL FREE // NVIDIA API CONSOLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg-0:#070906;
+    --bg-1:#0d120d;
+    --bg-2:#121a12;
+    --line:rgba(118,185,0,0.22);
+    --line-strong:rgba(118,185,0,0.45);
+    --green:#7CC400;
+    --green-dim:#4d7a00;
+    --green-glow:rgba(124,196,0,0.35);
+    --amber:#FFB000;
+    --amber-dim:rgba(255,176,0,0.28);
+    --text:#DCE8D6;
+    --text-dim:#7C8C78;
+    --text-faint:#4B5B48;
+    --err:#FF4D4D;
+    --cyan:#00BCD4;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg-0);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    overflow:hidden;
+  }
+
+  body{
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -10%, rgba(124,196,0,0.06), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.014) 0px, rgba(255,255,255,0.014) 1px, transparent 1px, transparent 3px);
+  }
+
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:50;
+    opacity:0.035;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  .frame{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    max-width:1180px;
+    margin:0 auto;
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+    position:relative;
+  }
+
+  header{
+    padding:22px 26px 16px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    animation:reveal .5s ease both;
+  }
+  header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity:0.6;
+  }
+
+  .brand-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+
+  .brand{
+    font-family:'Chakra Petch', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.06em;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand small{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:500;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--green);
+    border:1px solid var(--line-strong);
+    padding:3px 7px;
+    border-radius:2px;
+    background:rgba(124,196,0,0.06);
+  }
+  .brand .free-badge{
+    font-family:'Chakra Petch', sans-serif;
+    font-weight:700;
+    font-size:10px;
+    letter-spacing:0.18em;
+    color:#070906;
+    background:var(--green);
+    padding:3px 8px;
+    border-radius:2px;
+    text-transform:uppercase;
+    box-shadow:0 0 12px -2px var(--green-glow);
+    animation:pulse 2.2s infinite;
+  }
+
+  .brand-right{
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+
+  .mode-tabs{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .mode-tab{
+    background:var(--bg-1);
+    color:var(--text-dim);
+    border:none;
+    font-family:'Chakra Petch', sans-serif;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    padding:7px 14px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .mode-tab + .mode-tab{ border-left:1px solid var(--line); }
+  .mode-tab:hover{ color:var(--text); }
+  .mode-tab.active{ background:var(--green); color:#0a0d07; }
+
+  .status{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px;
+    letter-spacing:0.12em;
+    color:var(--text-dim);
+    text-transform:uppercase;
+  }
+  .status .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--text-faint);
+    transition:background .3s, box-shadow .3s;
+  }
+  .status.online .dot{ background:var(--green); box-shadow:0 0 8px 1px var(--green-glow); animation:pulse 2.2s infinite; }
+  .status.busy .dot{ background:var(--amber); box-shadow:0 0 8px 1px var(--amber-dim); animation:pulse 1s infinite; }
+  .status.error .dot{ background:var(--err); box-shadow:0 0 8px 1px rgba(255,77,77,0.4); }
+
+  .meta-row{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  .model-field{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:0.08em;
+  }
+  .model-field label{ text-transform:uppercase; color:var(--text-faint); }
+  .model-field select{
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    color:var(--green);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:5px 9px;
+    border-radius:2px;
+    letter-spacing:0.02em;
+    max-width:320px;
+  }
+  .model-field select:focus{ outline:none; border-color:var(--green-dim); box-shadow:0 0 0 1px var(--green-dim); }
+
+  .readout{
+    display:flex; gap:16px;
+    margin-left:auto;
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:0.08em;
+  }
+  .readout .val{ color:var(--green); }
+
+  .info-bar{
+    margin-top:10px;
+    padding:8px 14px;
+    background:rgba(124,196,0,0.04);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:0.04em;
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  .info-bar .val{ color:var(--green); font-weight:600; }
+
+  .arena-picker{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    font-size:11px;
+    letter-spacing:0.06em;
+  }
+  .arena-picker .picker-label{
+    color:var(--text-faint);
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    margin-right:4px;
+  }
+  .chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--bg-1);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:6px 11px;
+    border-radius:20px;
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .chip .swatch{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--text-faint);
+  }
+  .chip.on{
+    border-color:var(--green-dim);
+    color:var(--text);
+    background:rgba(124,196,0,0.08);
+  }
+  .chip.on .swatch{ background:var(--green); box-shadow:0 0 5px 0 var(--green-glow); }
+  .chip:hover{ color:var(--text); }
+
+  .log{
+    flex:1;
+    overflow-y:auto;
+    padding:24px 26px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    scroll-behavior:smooth;
+  }
+  .log::-webkit-scrollbar, .arena-grid::-webkit-scrollbar{ width:8px; }
+  .log::-webkit-scrollbar-track, .arena-grid::-webkit-scrollbar-track{ background:transparent; }
+  .log::-webkit-scrollbar-thumb, .arena-grid::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:4px; }
+
+  .empty-state{
+    margin:auto;
+    text-align:center;
+    color:var(--text-faint);
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    line-height:2;
+  }
+  .empty-state .glyph{
+    font-size:28px;
+    color:var(--green-dim);
+    display:block;
+    margin-bottom:10px;
+    letter-spacing:0;
+  }
+
+  .msg{
+    max-width:78%;
+    animation:rise .32s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .msg.user{ align-self:flex-end; }
+  .msg.assistant{ align-self:flex-start; }
+
+  .msg .tag{
+    font-size:10px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    margin-bottom:5px;
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .msg.user .tag{ color:var(--green); justify-content:flex-end; }
+  .msg.assistant .tag{ color:var(--amber); }
+  .msg .tag .t{ color:var(--text-faint); font-weight:400; letter-spacing:0.06em; }
+
+  .bubble{
+    padding:11px 14px;
+    border-radius:3px;
+    font-size:13.5px;
+    line-height:1.62;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+    background:var(--bg-1);
+    border:1px solid var(--line);
+  }
+  .msg.user .bubble{ border-left:2px solid var(--green); color:#EAF3E4; }
+  .msg.assistant .bubble{ border-left:2px solid var(--amber); background:var(--bg-2); }
+  .msg.error .bubble{ border-left:2px solid var(--err); color:#ffb3b3; }
+
+  .cursor{
+    display:inline-block;
+    width:7px; height:14px;
+    background:var(--amber);
+    margin-left:2px;
+    vertical-align:text-bottom;
+    animation:blink 0.9s steps(1) infinite;
+  }
+
+  .arena-grid{
+    flex:1;
+    overflow-y:auto;
+    padding:24px 26px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .arena-round{ animation:rise .32s cubic-bezier(.2,.7,.3,1) both; }
+  .arena-round .round-head{
+    display:flex; align-items:baseline; gap:10px;
+    margin-bottom:10px; padding-bottom:8px;
+    border-bottom:1px dashed var(--line);
+  }
+  .arena-round .round-num{
+    font-family:'Chakra Petch', sans-serif; font-weight:700;
+    font-size:11px; letter-spacing:0.14em; color:var(--green);
+    text-transform:uppercase; white-space:nowrap;
+  }
+  .arena-round .round-q{
+    font-size:13px; color:#EAF3E4; line-height:1.5;
+    white-space:pre-wrap; word-wrap:break-word;
+  }
+  .arena-round .round-t{
+    margin-left:auto; font-size:10px; color:var(--text-faint);
+    letter-spacing:0.06em; white-space:nowrap;
+  }
+  .arena-round .round-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px; align-items:start;
+  }
+  .arena-card{
+    background:var(--bg-1); border:1px solid var(--line); border-radius:4px;
+    display:flex; flex-direction:column; min-height:160px;
+    animation:rise .32s cubic-bezier(.2,.7,.3,1) both; overflow:hidden;
+  }
+  .arena-card .card-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 12px; border-bottom:1px solid var(--line); background:var(--bg-2);
+  }
+  .arena-card .card-title{
+    display:flex; align-items:center; gap:7px;
+    font-family:'Chakra Petch', sans-serif; font-weight:600;
+    font-size:12px; letter-spacing:0.04em; color:var(--text);
+  }
+  .arena-card .card-title .swatch{ width:6px; height:6px; border-radius:50%; background:var(--text-faint); }
+  .arena-card.streaming .card-title .swatch{ background:var(--amber); box-shadow:0 0 6px 0 var(--amber-dim); animation:pulse 1s infinite; }
+  .arena-card.done .card-title .swatch{ background:var(--green); box-shadow:0 0 6px 0 var(--green-glow); }
+  .arena-card.error .card-title .swatch{ background:var(--err); }
+  .arena-card .card-provider{ font-size:9.5px; color:var(--text-faint); letter-spacing:0.1em; text-transform:uppercase; }
+  .arena-card .card-meta{ font-size:10px; color:var(--text-faint); letter-spacing:0.04em; white-space:nowrap; }
+  .arena-card .card-meta .val{ color:var(--green); }
+  .arena-card .card-body{
+    padding:12px; font-size:13px; line-height:1.6;
+    white-space:pre-wrap; word-wrap:break-word; flex:1;
+  }
+  .arena-card.error .card-body{ color:#ffb3b3; }
+
+  .composer{
+    border-top:1px solid var(--line);
+    padding:16px 26px 20px;
+    background:linear-gradient(180deg, transparent, rgba(124,196,0,0.02));
+  }
+  .composer-inner{
+    display:flex; align-items:flex-end; gap:10px;
+    background:var(--bg-1); border:1px solid var(--line);
+    border-radius:4px; padding:10px 10px 10px 14px;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .composer-inner:focus-within{
+    border-color:var(--green-dim);
+    box-shadow:0 0 0 1px var(--green-dim), 0 0 16px -4px var(--green-glow);
+  }
+  .prompt-glyph{ color:var(--green); font-weight:600; font-size:14px; padding-bottom:9px; user-select:none; }
+  textarea{
+    flex:1; background:transparent; border:none; outline:none; resize:none;
+    color:var(--text); font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px; line-height:1.5; max-height:160px; padding:8px 0;
+  }
+  textarea::placeholder{ color:var(--text-faint); }
+
+  button.send{
+    background:var(--green); color:#0a0d07; border:none;
+    font-family:'Chakra Petch', sans-serif; font-weight:700;
+    font-size:12px; letter-spacing:0.1em; padding:10px 16px;
+    border-radius:3px; cursor:pointer; text-transform:uppercase;
+    transition:background .15s, transform .1s, box-shadow .15s;
+  }
+  button.send:hover{ background:#8fe000; box-shadow:0 0 18px -2px var(--green-glow); }
+  button.send:active{ transform:scale(0.96); }
+  button.send:disabled{ background:var(--bg-2); color:var(--text-faint); cursor:not-allowed; box-shadow:none; }
+
+  .hint{
+    margin-top:9px; display:flex; justify-content:space-between;
+    font-size:10.5px; color:var(--text-faint); letter-spacing:0.06em;
+  }
+  .hint button{
+    background:none; border:none; color:var(--text-faint);
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    letter-spacing:0.08em; cursor:pointer; text-transform:uppercase;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .hint button:hover{ color:var(--amber); }
+
+  @keyframes reveal{ from{ opacity:0; transform:translateY(-6px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes rise{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+  @keyframes blink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+  @media (max-width:600px){
+    .frame{ border-left:none; border-right:none; }
+    .readout{ display:none; }
+    .info-bar{ display:none; }
+    .msg{ max-width:90%; }
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <header>
+      <div class="brand-row">
+        <div class="brand">SIGNAL <small>NVIDIA API</small> <span class="free-badge">free</span></div>
+        <div class="brand-right">
+          <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="chat">chat</button>
+            <button class="mode-tab" data-mode="arena">arena</button>
+          </div>
+          <div class="status" id="status"><span class="dot"></span><span id="statusText">standby</span></div>
+        </div>
+      </div>
+
+      <div class="meta-row" id="chatModelRow">
+        <div class="model-field">
+          <label>model</label>
+          <select id="modelSelect"></select>
+        </div>
+        <div class="readout">
+          <span>ttft <b class="val" id="ttft">--</b></span>
+          <span>total <b class="val" id="total">--</b></span>
+          <span>turns <b class="val" id="turns">0</b></span>
+        </div>
+      </div>
+
+      <div class="meta-row" id="arenaModelRow" style="display:none">
+        <div class="arena-picker" id="arenaPicker">
+          <span class="picker-label">modelos</span>
+        </div>
+      </div>
+
+      <div class="info-bar">
+        <span>rate limit: <span class="val">40 RPM</span></span>
+        <span>custo: <span class="val">$0</span></span>
+        <span>cartao: <span class="val">nao</span></span>
+        <span>api: <span class="val">openai-compatible</span></span>
+      </div>
+    </header>
+
+    <div class="log" id="log">
+      <div class="empty-state" id="emptyState">
+        <span class="glyph">&#9889;</span>
+        canal aberto &middot; integrate.api.nvidia.com<br/>
+        8 modelos gratuitos &middot; 100% openai-compatible<br/>
+        digite abaixo para iniciar
+      </div>
+    </div>
+
+    <div class="arena-grid" id="arenaGrid" style="display:none">
+      <div class="empty-state" id="arenaEmptyState" style="grid-column:1/-1">
+        <span class="glyph">&#9889;&#9889;</span>
+        selecione os modelos acima e envie um prompt<br/>para comparar as respostas lado a lado
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <span class="prompt-glyph">&gt;</span>
+        <textarea id="input" rows="1" placeholder="mensagem... (enter envia, shift+enter quebra linha)"></textarea>
+        <button class="send" id="sendBtn">enviar</button>
+      </div>
+      <div class="hint">
+        <span>enter = enviar &middot; shift+enter = nova linha</span>
+        <button id="clearBtn">limpar sessao</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const log = document.getElementById('log');
+  const arenaGrid = document.getElementById('arenaGrid');
+  const arenaEmptyState = document.getElementById('arenaEmptyState');
+  const emptyState = document.getElementById('emptyState');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const modelSelect = document.getElementById('modelSelect');
+  const chatModelRow = document.getElementById('chatModelRow');
+  const arenaModelRow = document.getElementById('arenaModelRow');
+  const arenaPicker = document.getElementById('arenaPicker');
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  const ttftEl = document.getElementById('ttft');
+  const totalEl = document.getElementById('total');
+  const turnsEl = document.getElementById('turns');
+
+  let mode = 'chat';
+  let messages = [];
+  let turns = 0;
+  let busy = false;
+  let models = [];
+  let arenaSelected = new Set();
+
+  function setStatus(m, label){
+    statusEl.className = 'status ' + m;
+    statusText.textContent = label;
+  }
+
+  function autoResize(){
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  }
+  input.addEventListener('input', autoResize);
+
+  async function streamChat(model, msgs, handlers){
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages: msgs, model})
+    });
+    if(!res.ok || !res.body) throw new Error('HTTP ' + res.status);
+
+    const ctype = res.headers.get('content-type') || '';
+    if(ctype.includes('application/json')){
+      const d = await res.json();
+      if(d.error) throw new Error(d.error);
+      if(d.content) handlers.onChunk && handlers.onChunk(d.content);
+      handlers.onDone && handlers.onDone(d.total_ms);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += decoder.decode(value, {stream:true});
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+
+      for(const part of parts){
+        if(!part.trim()) continue;
+        let eventName = 'message';
+        let dataStr = '';
+        for(const line of part.split('\n')){
+          if(line.startsWith('event:')) eventName = line.slice(6).trim();
+          else if(line.startsWith('data:')) dataStr += line.slice(5).trim();
+        }
+        if(!dataStr) continue;
+        let payload;
+        try{ payload = JSON.parse(dataStr); } catch(e){ continue; }
+
+        if(eventName === 'meta') handlers.onMeta && handlers.onMeta(payload.ttft_ms);
+        else if(eventName === 'done') handlers.onDone && handlers.onDone(payload.total_ms);
+        else if(eventName === 'error') throw new Error(payload.message || 'erro desconhecido');
+        else if(payload.content) handlers.onChunk && handlers.onChunk(payload.content);
+      }
+    }
+  }
+
+  function scrollToEnd(){ log.scrollTop = log.scrollHeight; }
+
+  function addMessage(role, text){
+    if(emptyState) emptyState.remove();
+    const wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    const label = role === 'user' ? 'you' : (role === 'error' ? 'erro' : modelSelect.value);
+    tag.innerHTML = (role === 'user'
+      ? '<span class="t">' + new Date().toLocaleTimeString('pt-BR') + '</span><span>' + label + '</span>'
+      : '<span>' + label + '</span><span class="t">' + new Date().toLocaleTimeString('pt-BR') + '</span>');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    wrap.appendChild(tag);
+    wrap.appendChild(bubble);
+    log.appendChild(wrap);
+    scrollToEnd();
+    return bubble;
+  }
+
+  function setBusy(v){
+    busy = v;
+    sendBtn.disabled = v;
+    input.disabled = v;
+  }
+
+  async function sendChat(text){
+    addMessage('user', text);
+    messages.push({role:'user', content:text});
+    setBusy(true);
+    setStatus('busy', 'transmitindo');
+    ttftEl.textContent = '--';
+
+    const bubble = addMessage('assistant', '');
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    bubble.appendChild(cursor);
+    let assistantText = '';
+
+    try{
+      await streamChat(modelSelect.value, messages, {
+        onMeta: (ttft) => { ttftEl.textContent = ttft + 'ms'; },
+        onChunk: (chunk) => {
+          assistantText += chunk;
+          bubble.textContent = assistantText;
+          bubble.appendChild(cursor);
+          scrollToEnd();
+        },
+        onDone: (total) => { totalEl.textContent = total + 'ms'; },
+      });
+      cursor.remove();
+      messages.push({role:'assistant', content:assistantText});
+      turns += 1;
+      turnsEl.textContent = turns;
+      setStatus('online', 'conectado');
+    } catch(err){
+      cursor.remove();
+      bubble.parentElement.classList.add('error');
+      bubble.textContent = 'falha na transmissao: ' + err.message;
+      setStatus('error', 'erro');
+    } finally{
+      setBusy(false);
+      input.focus();
+    }
+  }
+
+  function renderArenaPicker(){
+    arenaPicker.querySelectorAll('.chip').forEach(el => el.remove());
+    models.forEach(m => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (arenaSelected.has(m.id) ? ' on' : '');
+      chip.dataset.id = m.id;
+      chip.innerHTML = '<span class="swatch"></span><span>' + m.label + '</span>';
+      chip.addEventListener('click', () => {
+        if(arenaSelected.has(m.id)) arenaSelected.delete(m.id);
+        else arenaSelected.add(m.id);
+        renderArenaPicker();
+      });
+      arenaPicker.appendChild(chip);
+    });
+  }
+
+  let arenaRound = 0;
+
+  function runArena(text){
+    if(arenaEmptyState) arenaEmptyState.remove();
+    const selected = models.filter(m => arenaSelected.has(m.id));
+    if(selected.length === 0){
+      setStatus('error', 'selecione ao menos 1 modelo');
+      return;
+    }
+    setBusy(true);
+    setStatus('busy', 'transmitindo ' + selected.length + ' canais');
+
+    arenaRound += 1;
+    const round = document.createElement('section');
+    round.className = 'arena-round';
+    const qEl = document.createElement('div');
+    qEl.className = 'round-q';
+    qEl.textContent = text;
+    const head = document.createElement('div');
+    head.className = 'round-head';
+    head.innerHTML = '<span class="round-num">#' + arenaRound + '</span>';
+    head.appendChild(qEl);
+    const tEl = document.createElement('span');
+    tEl.className = 'round-t';
+    tEl.textContent = new Date().toLocaleTimeString('pt-BR');
+    head.appendChild(tEl);
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'round-cards';
+    round.appendChild(head);
+    round.appendChild(cardsWrap);
+    arenaGrid.prepend(round);
+    arenaGrid.scrollTop = 0;
+
+    const promptMsgs = [{role:'user', content:text}];
+    let pending = selected.length;
+
+    const cards = selected.map(m => {
+      const card = document.createElement('div');
+      card.className = 'arena-card streaming';
+      card.innerHTML =
+        '<div class="card-head">' +
+          '<div class="card-title"><span class="swatch"></span>' + m.label + '<span class="card-provider">' + m.provider + '</span></div>' +
+          '<div class="card-meta">ttft <span class="val ttft">--</span> &middot; total <span class="val total">--</span></div>' +
+        '</div>' +
+        '<div class="card-body"></div>';
+      cardsWrap.appendChild(card);
+      return {model: m, card, body: card.querySelector('.card-body'), ttftEl: card.querySelector('.ttft'), totalEl: card.querySelector('.total')};
+    });
+
+    Promise.all(cards.map(c => {
+      let text = '';
+      return streamChat(c.model.id, promptMsgs, {
+        onMeta: (ttft) => { c.ttftEl.textContent = ttft + 'ms'; },
+        onChunk: (chunk) => { text += chunk; c.body.textContent = text; },
+        onDone: (total) => { c.totalEl.textContent = total + 'ms'; },
+      }).then(() => {
+        c.card.classList.remove('streaming');
+        c.card.classList.add('done');
+      }).catch((err) => {
+        c.card.classList.remove('streaming');
+        c.card.classList.add('error');
+        c.body.textContent = 'falha: ' + err.message;
+      }).finally(() => {
+        pending -= 1;
+        if(pending === 0){
+          setBusy(false);
+          setStatus('online', 'conectado');
+          input.focus();
+        }
+      });
+    }));
+  }
+
+  function setMode(m){
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+    chatModelRow.style.display = m === 'chat' ? 'flex' : 'none';
+    arenaModelRow.style.display = m === 'arena' ? 'flex' : 'none';
+    log.style.display = m === 'chat' ? 'flex' : 'none';
+    arenaGrid.style.display = m === 'arena' ? 'grid' : 'none';
+    input.placeholder = m === 'chat'
+      ? 'mensagem... (enter envia, shift+enter quebra linha)'
+      : 'prompt para comparar entre os modelos selecionados...';
+    sendBtn.textContent = m === 'chat' ? 'enviar' : 'comparar';
+  }
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => setMode(tab.dataset.mode));
+  });
+
+  async function send(){
+    const text = input.value.trim();
+    if(!text || busy) return;
+    input.value = '';
+    autoResize();
+    if(mode === 'chat') await sendChat(text);
+    else runArena(text);
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      send();
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    messages = [];
+    turns = 0;
+    turnsEl.textContent = '0';
+    ttftEl.textContent = '--';
+    totalEl.textContent = '--';
+    log.innerHTML = '';
+    const es = document.createElement('div');
+    es.className = 'empty-state';
+    es.innerHTML = '<span class="glyph">&#9889;</span>canal aberto &middot; integrate.api.nvidia.com<br/>8 modelos gratuitos &middot; 100% openai-compatible<br/>digite abaixo para iniciar';
+    log.appendChild(es);
+    arenaGrid.innerHTML = '';
+    arenaRound = 0;
+    const aes = document.createElement('div');
+    aes.className = 'empty-state';
+    aes.style.margin = 'auto';
+    aes.innerHTML = '<span class="glyph">&#9889;&#9889;</span>selecione os modelos acima e envie um prompt<br/>para comparar as respostas lado a lado';
+    arenaGrid.appendChild(aes);
+    setStatus('', 'standby');
+  });
+
+  async function boot(attempt){
+    attempt = attempt || 1;
+    try{
+      const r = await fetch('/api/models');
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      models = await r.json();
+      if(!models.length) throw new Error('lista vazia');
+      modelSelect.innerHTML = models.map(m => '<option value="' + m.id + '">' + m.label + ' &middot; ' + m.provider + (m.category === 'vision' ? ' [vision]' : '') + '</option>').join('');
+      arenaSelected = new Set(models.map(m => m.id));
+      renderArenaPicker();
+      setStatus('online', 'conectado');
+    } catch(e){
+      if(attempt < 5){
+        setStatus('busy', 'reconectando (' + attempt + ')');
+        setTimeout(() => boot(attempt + 1), 1500 * attempt);
+      } else {
+        setStatus('error', 'offline -- recarregue a pagina');
+      }
+    }
+  }
+
+  boot();
+  input.focus();
+</script>
+</body>
+</html>
