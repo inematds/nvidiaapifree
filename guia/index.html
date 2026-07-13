@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVIDIA API Free — Console gratuito para 100+ modelos de IA</title>
+<meta name="description" content="Console web para a API gratuita da NVIDIA. 8 modelos LLM/Vision prontos, arena mode para comparar respostas, streaming SSE, 100% OpenAI-compatible. Sem cartao, sem custo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#E2A23B; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#b9791d; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb)}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--amb);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  @media(max-width:760px){nav .links a.sec{display:none}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(226,162,59,.22),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.18rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:34ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;display:block}
+  .hero .code-preview{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000;background:#0a0a0e;padding:24px 22px}
+  .hero .code-preview pre{border:none;margin:0;padding:0;box-shadow:none;font-size:.82rem}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:62ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.92rem;margin:0}
+  .num{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:rgba(226,162,59,.14);color:var(--amb);font-family:Sora;font-weight:800;font-size:.9rem;margin-bottom:.7em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0}
+  pre .c{color:#6f6f7c} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;margin-bottom:26px}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--amb);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .7em}
+  .phase{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border:none}
+  .phase .tag{flex:0 0 92px;font-family:Sora;font-weight:800;color:var(--amb)}
+  .phase .d strong{display:block;margin-bottom:.2em}
+  .phase .d span{color:var(--mut);font-size:.92rem}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
+
+  .model-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:.9rem}
+  .model-table th{text-align:left;font-family:Sora;font-weight:600;color:var(--amb);padding:10px 12px;border-bottom:2px solid var(--line);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase}
+  .model-table td{padding:10px 12px;border-bottom:1px solid var(--line);color:var(--txt)}
+  .model-table tr:hover td{background:var(--bg2)}
+  .model-table .cat{font-size:.72rem;font-family:Sora;font-weight:600;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><span class="emoji">&#9889;</span> NVIDIA API Free</a>
+  <span class="sep">|</span>
+  <span class="clubpro">
+    <a class="inema" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+    <span class="sep">-</span>
+    <a class="pro" href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+  </span>
+  <div class="links">
+    <a class="sec" href="#oque">O que e</a>
+    <a class="sec" href="#modelos">Modelos</a>
+    <a class="sec" href="#guia">Guia de uso</a>
+    <a class="sec" href="#roadmap">Roadmap</a>
+    <button class="tgl" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">&#127769;</button>
+    <a class="btn" href="https://github.com/inematds/nvidiaapifree" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="glow"></div>
+  <div class="wrap">
+    <div>
+      <span class="chip">Console gratuito</span>
+      <h1>100+ modelos de IA.<br><span class="amb">Custo zero.</span></h1>
+      <p class="lead">Console web para a API gratuita da NVIDIA (build.nvidia.com). Chat, arena para comparar modelos, streaming, embeddings. Sem cartao de credito, sem fila, sem pegadinha.</p>
+      <div class="cta">
+        <a class="btn" href="#guia">Comecar o guia</a>
+        <a class="btn ghost" href="https://github.com/inematds/nvidiaapifree" target="_blank" rel="noopener">Ver no GitHub</a>
+      </div>
+    </div>
+    <div class="code-preview">
+<pre><span class="c"># Trocar de OpenAI pra NVIDIA = 2 linhas</span>
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="s">"https://integrate.api.nvidia.com/v1"</span>,
+    api_key=<span class="s">"nvapi-XXXXX"</span>  <span class="c"># gratis em build.nvidia.com</span>
+)
+
+r = client.chat.completions.create(
+    model=<span class="s">"meta/llama-3.1-70b-instruct"</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Ola!"</span>}]
+)
+<span class="k">print</span>(r.choices[0].message.content)</pre>
+    </div>
+  </div>
+</header>
+
+<section id="oque"><div class="wrap">
+  <span class="chip">O que e</span>
+  <h2>IA de ponta, sem gastar nada</h2>
+  <p class="sub">A NVIDIA disponibiliza 100+ modelos de IA via API gratuita em build.nvidia.com. Este projeto e um console web completo para usar esses modelos sem complicacao.</p>
+  <div class="grid g3">
+    <div class="card"><h3>&#128640; 100% OpenAI-compatible</h3><p>Usa a biblioteca <code>openai</code> padrao (Python/JS). Troca <code>base_url</code> e <code>api_key</code> e pronto. Zero mudanca de codigo.</p></div>
+    <div class="card"><h3>&#9889; Arena Mode</h3><p>Compare ate 8 modelos lado a lado com o mesmo prompt. Ve TTFT, tempo total e qualidade de cada resposta em tempo real.</p></div>
+    <div class="card"><h3>&#128274; Sem cartao de credito</h3><p>Cria conta no NVIDIA Developer, gera a chave <code>nvapi-...</code> e sai usando. 40 requisicoes/minuto por modelo, sem cobranca.</p></div>
+  </div>
+</div></section>
+
+<section id="modelos"><div class="wrap">
+  <span class="chip">Modelos disponiveis</span>
+  <h2>8 modelos pre-configurados</h2>
+  <p class="sub">O console vem com 8 modelos prontos para uso. A API da NVIDIA tem 100+ no total, e voce pode adicionar qualquer um ao registry.</p>
+  <table class="model-table">
+    <thead><tr><th>Modelo</th><th>Provider</th><th>Tipo</th><th>Destaque</th></tr></thead>
+    <tbody>
+      <tr><td>Llama 3.1 70B</td><td>Meta</td><td><span class="cat">LLM</span></td><td>Versatil, 128k context</td></tr>
+      <tr><td>Llama 3.1 405B</td><td>Meta</td><td><span class="cat">LLM</span></td><td>Maior Llama, qualidade top</td></tr>
+      <tr><td>DeepSeek R1</td><td>DeepSeek</td><td><span class="cat">LLM</span></td><td>Reasoning, 671B MoE</td></tr>
+      <tr><td>Qwen 3.5 397B</td><td>Qwen</td><td><span class="cat">LLM</span></td><td>MoE 17B ativo, poliglota</td></tr>
+      <tr><td>GLM-5.2</td><td>Z.ai</td><td><span class="cat">LLM</span></td><td>128k, resposta longa</td></tr>
+      <tr><td>Nemotron 120B</td><td>NVIDIA</td><td><span class="cat">LLM</span></td><td>1M context, tool use</td></tr>
+      <tr><td>Mixtral 8x22B</td><td>Mistral</td><td><span class="cat">LLM</span></td><td>MoE europeu, rapido</td></tr>
+      <tr><td>Llama 3.2 90B Vision</td><td>Meta</td><td><span class="cat">Vision</span></td><td>Analisa imagens + texto</td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin-top:18px">Embeddings tambem disponiveis via endpoint <code>/api/embeddings</code> (modelo <code>nvidia/nv-embedqa-e5-v5</code>).</p>
+</div></section>
+
+<section id="fluxo"><div class="wrap">
+  <span class="chip">Como funciona</span>
+  <h2>Da chave ao chat em 3 passos</h2>
+  <p class="sub">A API e 100% compativel com OpenAI. O console e um frontend bonito que conecta nela via FastAPI (local) ou Vercel (producao).</p>
+  <div class="flow">
+    <span>Gera chave em build.nvidia.com</span><span class="arr">&rarr;</span>
+    <span>Coloca no .env</span><span class="arr">&rarr;</span>
+    <span>Roda o servidor</span><span class="arr">&rarr;</span>
+    <span>Chat ou Arena</span>
+  </div>
+  <div class="grid g2" style="margin-top:28px">
+    <div class="card"><h3>&#128172; Modo Chat</h3><p>Conversa continua com um modelo selecionado. Streaming SSE mostra tokens em tempo real. Historico de mensagens mantido no frontend.</p></div>
+    <div class="card"><h3>&#127941; Modo Arena</h3><p>Selecione 2-8 modelos, envie o mesmo prompt e compare as respostas lado a lado. TTFT e tempo total por modelo. Perfeito pra decidir qual modelo usar.</p></div>
+  </div>
+</div></section>
+
+<section id="pre"><div class="wrap">
+  <span class="chip">Pre-requisitos</span>
+  <h2>O que voce precisa</h2>
+  <p class="sub">Poucas dependencias. Tudo gratuito.</p>
+  <div class="grid g3">
+    <div class="card">
+      <h3>&#128273; Chave NVIDIA</h3>
+      <p>Crie conta gratuita e gere a chave API.</p>
+<pre><span class="c"># Acesse:</span>
+<span class="s">https://build.nvidia.com/settings/api-keys</span>
+<span class="c"># Clique "Generate API Key"</span>
+<span class="c"># Salve a chave nvapi-...</span></pre>
+    </div>
+    <div class="card">
+      <h3>&#128013; Python 3.10+</h3>
+      <p>Com pip para instalar dependencias.</p>
+<pre><span class="k">python3</span> --version
+<span class="k">pip</span> install openai fastapi uvicorn python-dotenv</pre>
+    </div>
+    <div class="card">
+      <h3>&#128187; Git + GitHub CLI</h3>
+      <p>Para clonar o projeto e fazer deploy.</p>
+<pre><span class="k">git</span> clone https://github.com/inematds/nvidiaapifree
+<span class="k">cd</span> nvidiaapifree</pre>
+    </div>
+  </div>
+</div></section>
+
+<section id="guia"><div class="wrap">
+  <span class="chip">Guia de uso &middot; passo a passo</span>
+  <h2>Do zero ao chat em 5 minutos</h2>
+  <p class="sub">Siga os passos abaixo. No final voce tera o console rodando local com 8 modelos de IA gratuitos.</p>
+
+  <div class="step"><div class="b">1</div><div>
+    <h3>Gere sua chave gratuita</h3>
+    <p>Acesse build.nvidia.com, crie conta (sem cartao) e gere a API key.</p>
+<pre><span class="c"># 1. Abra no navegador:</span>
+<span class="s">https://build.nvidia.com/settings/api-keys</span>
+
+<span class="c"># 2. Clique "Generate API Key"</span>
+<span class="c"># 3. Copie a chave (formato: nvapi-XXXX...)</span>
+<span class="c"># A chave aparece UMA vez. Salve imediatamente.</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">2</div><div>
+    <h3>Clone o projeto e configure</h3>
+    <p>Clone o repo e crie o arquivo <code>.env</code> com sua chave.</p>
+<pre><span class="k">git</span> clone <span class="s">https://github.com/inematds/nvidiaapifree</span>
+<span class="k">cd</span> nvidiaapifree
+<span class="k">cp</span> .env.example .env
+
+<span class="c"># Edite o .env e cole sua chave:</span>
+<span class="k">echo</span> <span class="s">"NVIDIA_API_KEY=nvapi-SUA_CHAVE_AQUI"</span> > .env</pre>
+  </div></div>
+
+  <div class="step"><div class="b">3</div><div>
+    <h3>Instale as dependencias</h3>
+    <p>O projeto usa FastAPI + OpenAI SDK. Uma linha resolve.</p>
+<pre><span class="k">pip</span> install openai fastapi uvicorn python-dotenv</pre>
+  </div></div>
+
+  <div class="step"><div class="b">4</div><div>
+    <h3>Teste a conexao</h3>
+    <p>Rode o script de teste para confirmar que a chave funciona.</p>
+<pre><span class="k">python3</span> test_api.py
+<span class="c"># Saida esperada: "ok, funcionando"</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">5</div><div>
+    <h3>Inicie o console</h3>
+    <p>Suba o servidor FastAPI e abra o console no navegador.</p>
+<pre><span class="k">python3</span> server.py
+<span class="c"># Servidor rodando em http://localhost:8812</span>
+
+<span class="c"># Abra no navegador:</span>
+<span class="s">http://localhost:8812</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">6</div><div>
+    <h3>Use o Chat ou Arena</h3>
+    <p>No console, escolha o modelo e converse. Ou mude pra Arena e compare modelos.</p>
+<pre><span class="c"># Chat: selecione um modelo no dropdown, digite e envie</span>
+<span class="c"># Arena: clique na aba "arena", selecione 2+ modelos, envie o mesmo prompt</span>
+<span class="c"># Os modelos respondem em paralelo com streaming em tempo real</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">7</div><div>
+    <h3>Use via codigo (opcional)</h3>
+    <p>A API tambem funciona diretamente no seu codigo Python/JS.</p>
+<pre><span class="c"># Python</span>
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="s">"https://integrate.api.nvidia.com/v1"</span>,
+    api_key=<span class="s">"nvapi-SUA_CHAVE"</span>
+)
+
+<span class="c"># Chat</span>
+r = client.chat.completions.create(
+    model=<span class="s">"meta/llama-3.1-70b-instruct"</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Explique IA em 2 frases"</span>}],
+    temperature=0.7, max_tokens=512
+)
+<span class="k">print</span>(r.choices[0].message.content)
+
+<span class="c"># Embeddings</span>
+emb = client.embeddings.create(
+    model=<span class="s">"nvidia/nv-embedqa-e5-v5"</span>,
+    input=[<span class="s">"texto para vetorizar"</span>],
+    extra_body={<span class="s">"input_type"</span>: <span class="s">"query"</span>}
+)
+<span class="k">print</span>(<span class="s">f"Dimensao: {len(emb.data[0].embedding)}"</span>)</pre>
+  </div></div>
+
+</div></section>
+
+<section id="deploy"><div class="wrap">
+  <span class="chip">Deploy na Vercel</span>
+  <h2>Publique seu console online</h2>
+  <p class="sub">O projeto esta pronto para deploy na Vercel. Funciona no plano gratuito.</p>
+
+  <div class="step"><div class="b">1</div><div>
+    <h3>Importe o projeto na Vercel</h3>
+    <p>Conecte seu repo GitHub a Vercel e importe.</p>
+<pre><span class="c"># Na Vercel:</span>
+<span class="c"># 1. New Project > Import Git Repository</span>
+<span class="c"># 2. Selecione inematds/nvidiaapifree</span>
+<span class="c"># 3. Framework: Other</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">2</div><div>
+    <h3>Configure as variaveis de ambiente</h3>
+    <p>Adicione <code>NVIDIA_API_KEY</code> nas Environment Variables do projeto na Vercel.</p>
+<pre><span class="c"># Em Project Settings > Environment Variables:</span>
+<span class="k">NVIDIA_API_KEY</span>=nvapi-SUA_CHAVE_AQUI
+
+<span class="c"># Opcional: chaves separadas por modelo</span>
+<span class="k">NVIDIA_API_KEY_LLAMA</span>=nvapi-...
+<span class="k">NVIDIA_API_KEY_DEEPSEEK</span>=nvapi-...</pre>
+  </div></div>
+
+</div></section>
+
+<section id="api-ref"><div class="wrap">
+  <span class="chip">Referencia rapida</span>
+  <h2>Endpoints e limites</h2>
+  <p class="sub">Tudo que voce precisa saber sobre a API NVIDIA NIM em uma tabela.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>&#128279; Endpoints</h3>
+<pre><span class="c"># Base URL</span>
+<span class="s">https://integrate.api.nvidia.com/v1</span>
+
+<span class="c"># Chat Completions</span>
+<span class="k">POST</span> /v1/chat/completions
+
+<span class="c"># Embeddings</span>
+<span class="k">POST</span> /v1/embeddings
+
+<span class="c"># Listar modelos</span>
+<span class="k">GET</span>  /v1/models</pre>
+    </div>
+    <div class="card">
+      <h3>&#128202; Limites do Free Tier</h3>
+<pre><span class="c"># Rate limit</span>
+<span class="k">40 RPM</span> por modelo  <span class="c"># ampliavel a 200</span>
+
+<span class="c"># Custo</span>
+<span class="s">$0</span>  <span class="c"># sem creditos, sem cobranca</span>
+
+<span class="c"># Cartao de credito</span>
+<span class="s">Nao requerido</span>
+
+<span class="c"># Expiracao da chave</span>
+<span class="s">Nao expira</span></pre>
+    </div>
+  </div>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <span class="chip">Roadmap</span>
+  <h2>Proximos passos</h2>
+  <p class="sub">O que ja foi feito e o que vem por ai.</p>
+  <div class="phase"><div class="tag">v1.0</div><div class="d"><strong>Console base</strong><span>Chat + Arena + streaming SSE. 8 modelos LLM/Vision. Deploy Vercel + local FastAPI.</span></div></div>
+  <div class="phase"><div class="tag">v1.1</div><div class="d"><strong>Embeddings UI</strong><span>Interface visual para testar embeddings, ver dimensao e similaridade entre textos.</span></div></div>
+  <div class="phase"><div class="tag">v1.2</div><div class="d"><strong>Vision UI</strong><span>Upload de imagem e analise com Llama 3.2 Vision direto no console.</span></div></div>
+  <div class="phase"><div class="tag">v2.0</div><div class="d"><strong>Playground completo</strong><span>System prompt editavel, temperature slider, historico salvo, export de conversas.</span></div></div>
+</div></section>
+
+<footer>
+  <div class="wrap">
+    <div class="pill">Python</div>
+    <div class="pill">FastAPI</div>
+    <div class="pill">OpenAI SDK</div>
+    <div class="pill">NVIDIA NIM</div>
+    <div class="pill">Vercel</div>
+    <p style="margin-top:18px">NVIDIA API Free &middot; Console gratuito para 100+ modelos de IA &middot;
+      <a href="https://github.com/inematds/nvidiaapifree">github.com/inematds/nvidiaapifree</a> &middot;
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var KEY='nvidiaapifree-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='\u2600\uFE0F'; }
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'\u2600\uFE0F':'\uD83C\uDF19';
+      localStorage.setItem(KEY, light?'light':'dark');
+    });
+  })();
+</script>
+</body>
+</html>
